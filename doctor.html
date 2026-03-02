@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HAMS - Doctor Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="db.js"></script>
+</head>
+
+<body class="bg-slate-50 min-h-screen font-sans">
+
+    <!-- Navigation -->
+    <nav class="bg-blue-600 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-2">
+                    <div class="bg-white text-blue-600 w-8 h-8 rounded-full flex items-center justify-center font-bold">
+                        +</div>
+                    <span class="font-bold text-xl tracking-tight">HAMS Doctor View</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span id="welcomeName" class="text-blue-100 text-sm"></span>
+                    <button onclick="logout()"
+                        class="bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded-lg text-sm transition font-medium border border-blue-500">Logout</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800">My Schedule & Daily Report</h1>
+                <p class="text-slate-500 text-sm mt-1">View your upcoming appointments and generate reports.</p>
+            </div>
+
+            <div class="mt-4 md:mt-0 flex gap-2">
+                <input type="date" id="filterDate"
+                    class="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                <button onclick="printReport()"
+                    class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg font-medium transition flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    </svg>
+                    Print Report
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm col-span-1">
+                <div class="text-slate-500 text-sm font-medium mb-1">Total Scheduled Today</div>
+                <div class="text-3xl font-bold text-blue-600" id="statScheduled">0</div>
+            </div>
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm col-span-1">
+                <div class="text-slate-500 text-sm font-medium mb-1">Cancellations Today</div>
+                <div class="text-3xl font-bold text-red-600" id="statCancelled">0</div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden" id="reportArea">
+            <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center"
+                id="reportHeader" style="display:none;">
+                <h2 class="text-lg font-bold text-slate-800">Daily Appointment Report - <span
+                        id="reportDateSpan"></span></h2>
+                <div class="text-sm text-slate-500" id="docNameSpan"></div>
+            </div>
+            <div class="p-0">
+                <table class="w-full text-left text-sm text-slate-600">
+                    <thead class="bg-slate-50 text-xs uppercase text-slate-500 border-b border-slate-200">
+                        <tr>
+                            <th class="px-6 py-3 font-medium">Time Slot</th>
+                            <th class="px-6 py-3 font-medium">Patient Info</th>
+                            <th class="px-6 py-3 font-medium">Date</th>
+                            <th class="px-6 py-3 font-medium">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scheduleList" class="divide-y divide-slate-100">
+                        <!-- Populated via JS -->
+                    </tbody>
+                </table>
+
+                <div id="emptyState" class="hidden py-12 text-center text-slate-500">
+                    <p>No appointments found for this selection.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Auth check
+        const user = getCurrentUser();
+        if (!user || user.role !== 'DOCTOR') {
+            window.location.href = 'index.html';
+        }
+
+        document.getElementById('welcomeName').textContent = `Dr. ${user.name}`;
+
+        // Initialize Date Filter to today
+        const today = new Date().toISOString().split('T')[0];
+        const dateInput = document.getElementById('filterDate');
+        dateInput.value = today;
+
+        dateInput.addEventListener('change', renderSchedule);
+
+        function renderSchedule() {
+            const date = dateInput.value;
+            // passing date to filter strictly for that day
+            const apps = getDoctorSchedule(user.id, date);
+
+            const tbody = document.getElementById('scheduleList');
+            const emptyState = document.getElementById('emptyState');
+
+            let countSch = 0;
+            let countCan = 0;
+
+            tbody.innerHTML = '';
+
+            if (apps.length === 0) {
+                emptyState.classList.remove('hidden');
+                document.getElementById('statScheduled').textContent = 0;
+                document.getElementById('statCancelled').textContent = 0;
+            } else {
+                emptyState.classList.add('hidden');
+
+                // Sort by time
+                apps.sort((a, b) => a.time.localeCompare(b.time)).forEach(app => {
+                    const patient = getPatientById(app.patientId);
+
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-slate-50 transition-colors';
+
+                    let statusBadge = app.status === 'SCHEDULED'
+                        ? '<span class="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full text-xs font-semibold border border-blue-100">Scheduled</span>'
+                        : '<span class="bg-red-50 text-red-700 px-2.5 py-1 rounded-full text-xs font-semibold border border-red-100">Cancelled</span>';
+
+                    if (app.status === 'SCHEDULED') countSch++;
+                    if (app.status === 'CANCELLED') countCan++;
+
+                    const problemDisplay = app.problem ? app.problem : 'Not specified';
+                    const pName = app.patientName || patient.name;
+                    const pAge = app.age ? `${app.age} yrs` : 'Age N/A';
+                    const pPhone = app.phone || 'N/A';
+                    const pAddress = app.address || 'N/A';
+                    const pMed = app.medicalBackground || 'None specified';
+
+                    tr.innerHTML = `
+                        <td class="px-6 py-4 font-bold text-slate-800 align-top">${app.time}</td>
+                        <td class="px-6 py-4 align-top">
+                            <div class="font-bold text-slate-800 text-base flex items-baseline gap-2">
+                                ${pName} 
+                                <span class="text-xs font-normal text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">${pAge}</span>
+                            </div>
+                            <div class="text-xs text-slate-600 mb-2 mt-1 flex flex-col gap-1">
+                                <span>📞 ${pPhone}</span>
+                                <span>📍 ${pAddress}</span>
+                            </div>
+                            <div class="text-xs text-slate-700 mt-2 bg-blue-50 p-2 rounded border border-blue-100">
+                                <span class="font-semibold text-blue-800">History:</span> ${pMed}
+                            </div>
+                            <div class="text-xs text-slate-700 mt-1 bg-red-50 p-2 rounded border border-red-100">
+                                <span class="font-semibold text-red-800">Problem:</span> ${problemDisplay}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 align-top">${app.date}</td>
+                        <td class="px-6 py-4 align-top">${statusBadge}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                document.getElementById('statScheduled').textContent = countSch;
+                document.getElementById('statCancelled').textContent = countCan;
+            }
+        }
+
+        function printReport() {
+            const date = dateInput.value;
+            const originalContents = document.body.innerHTML;
+
+            // Adjust styles slightly for print
+            document.getElementById('reportHeader').style.display = 'flex';
+            document.getElementById('reportDateSpan').textContent = date;
+            document.getElementById('docNameSpan').textContent = user.name;
+
+            const printContents = document.getElementById('reportArea').outerHTML;
+
+            document.body.innerHTML = `
+                <div class="p-8 max-w-4xl mx-auto">
+                    <h1 class="text-3xl font-bold mb-6 text-center">HAMS Daily Activity Report</h1>
+                    ${printContents}
+                    <div class="mt-8 text-sm text-gray-500 text-center">Generated on ${new Date().toLocaleString()}</div>
+                </div>
+            `;
+
+            window.print();
+
+            // Restore
+            document.body.innerHTML = originalContents;
+
+            // Re-attach event listeners after DOM replace
+            document.getElementById('filterDate').addEventListener('change', renderSchedule);
+            renderSchedule(); // re-render to attach fresh states
+        }
+
+        // Init
+        renderSchedule();
+    </script>
+</body>
+
+</html>

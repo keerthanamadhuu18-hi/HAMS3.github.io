@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HAMS - Patient Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="db.js"></script>
+</head>
+
+<body class="bg-slate-50 min-h-screen font-sans">
+
+    <!-- Navigation -->
+    <nav class="bg-blue-600 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-2">
+                    <div class="bg-white text-blue-600 w-8 h-8 rounded-full flex items-center justify-center font-bold">
+                        +</div>
+                    <span class="font-bold text-xl tracking-tight">HAMS Patient</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span id="welcomeName" class="text-blue-100 text-sm"></span>
+                    <button onclick="logout()"
+                        class="bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded-lg text-sm transition font-medium border border-blue-500">Logout</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+        <!-- Booking Form -->
+        <div class="lg:col-span-1">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 sticky top-8">
+                <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500" viewBox="0 0 20 20"
+                        fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    Book Appointment
+                </h2>
+
+                <div id="bookingMsg" class="hidden text-sm p-3 rounded-lg mb-4"></div>
+
+                <form id="bookForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Department</label>
+                        <select id="departmentSelect"
+                            class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                            <option value="">Select Department</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Doctor</label>
+                        <select id="doctorSelect"
+                            class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                            disabled>
+                            <option value="">Please select a Department first</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Date</label>
+                        <input type="date" id="dateSelect"
+                            class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                            required min="">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Time Slot</label>
+                        <select id="timeSelect"
+                            class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                            required>
+                            <option value="">Select Time</option>
+                            <option value="09:00">09:00 AM</option>
+                            <option value="10:00">10:00 AM</option>
+                            <option value="11:00">11:00 AM</option>
+                            <option value="13:00">01:00 PM</option>
+                            <option value="14:00">02:00 PM</option>
+                            <option value="15:00">03:00 PM</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Patient Full Name</label>
+                        <input type="text" id="patientName"
+                            class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                            placeholder="Who is the appointment for?" required>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Age</label>
+                            <input type="number" id="patientAge"
+                                class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                placeholder="Age" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Phone Number</label>
+                            <input type="tel" id="patientPhone"
+                                class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                placeholder="e.g. 123-456-7890" required>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Full Address</label>
+                        <input type="text" id="patientAddress"
+                            class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                            placeholder="Enter complete address" required>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Medical Background /
+                            History</label>
+                        <textarea id="patientHistory" rows="2"
+                            class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                            placeholder="Any past surgeries, allergies, or ongoing conditions?"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Current Problem / Symptoms</label>
+                        <textarea id="problemText" rows="2"
+                            class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                            placeholder="E.g., High fever since yesterday." required></textarea>
+                    </div>
+
+                    <button type="submit"
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors mt-2">
+                        Confirm Booking
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- My Appointments -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                    <h2 class="text-lg font-bold text-slate-800">My Appointments</h2>
+                </div>
+
+                <div class="p-0">
+                    <table class="w-full text-left text-sm text-slate-600">
+                        <thead class="bg-slate-50 text-xs uppercase text-slate-500 border-b border-slate-200">
+                            <tr>
+                                <th class="px-6 py-3 font-medium">Patient Details</th>
+                                <th class="px-6 py-3 font-medium">Doctor</th>
+                                <th class="px-6 py-3 font-medium">Date & Time</th>
+                                <th class="px-6 py-3 font-medium">Department</th>
+                                <th class="px-6 py-3 font-medium">Status</th>
+                                <th class="px-6 py-3 font-medium text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="appointmentsList" class="divide-y divide-slate-100">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+
+                    <div id="emptyState" class="hidden py-12 text-center text-slate-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-slate-300 mb-3"
+                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <p>No appointments booked yet.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Auth check
+        const user = getCurrentUser();
+        if (!user || user.role !== 'PATIENT') {
+            window.location.href = 'index.html';
+        }
+
+        document.getElementById('welcomeName').textContent = `Welcome, ${user.name}`;
+
+        // Prefill current user's name just in case
+        document.getElementById('patientName').value = user.name;
+
+        // Set min date to today
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('dateSelect').min = today;
+
+        // Load dropdowns
+        const depts = getDepartments();
+        const deptSelect = document.getElementById('departmentSelect');
+        depts.forEach(d => {
+            const opt = document.createElement('option');
+            opt.value = d.id;
+            opt.textContent = d.name;
+            deptSelect.appendChild(opt);
+        });
+
+        const doctors = getDoctors();
+        const docSelect = document.getElementById('doctorSelect');
+
+        deptSelect.addEventListener('change', (e) => {
+            const deptId = parseInt(e.target.value);
+            docSelect.innerHTML = '<option value="">Select a Doctor</option>';
+            if (deptId) {
+                // Filter the doctors array by the selected departmentId
+                const filteredDoctors = doctors.filter(d => d.departmentId === deptId);
+
+                if (filteredDoctors.length > 0) {
+                    docSelect.disabled = false;
+                    filteredDoctors.forEach(d => {
+                        const opt = document.createElement('option');
+                        opt.value = d.id;
+                        opt.textContent = d.name;
+                        docSelect.appendChild(opt);
+                    });
+                } else {
+                    docSelect.disabled = true;
+                    docSelect.innerHTML = '<option value="">No doctors available in this department</option>';
+                }
+            } else {
+                docSelect.disabled = true;
+                docSelect.innerHTML = '<option value="">Please select a Department first</option>';
+            }
+        });
+
+        // Load Table
+        function renderTable() {
+            const apps = getPatientAppointments(user.id);
+            const tbody = document.getElementById('appointmentsList');
+            const emptyState = document.getElementById('emptyState');
+
+            tbody.innerHTML = '';
+
+            if (apps.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+
+                // Sort by ID desc (newest first)
+                apps.sort((a, b) => b.id - a.id).forEach(app => {
+                    const doc = getDoctorById(app.doctorId);
+                    const dept = getDepartmentById(doc.departmentId);
+
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-slate-50 transition-colors';
+
+                    let statusBadge = app.status === 'SCHEDULED'
+                        ? '<span class="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full text-xs font-semibold border border-blue-100">Scheduled</span>'
+                        : '<span class="bg-red-50 text-red-700 px-2.5 py-1 rounded-full text-xs font-semibold border border-red-100">Cancelled</span>';
+
+                    let actionBtn = app.status === 'SCHEDULED'
+                        ? `<button onclick="handleCancel(${app.id})" class="text-red-600 hover:text-red-800 text-sm font-medium hover:underline">Cancel</button>`
+                        : `<span class="text-slate-400 text-sm">-</span>`;
+
+                    const patientNameDisplay = app.patientName ? app.patientName : 'Unknown';
+
+                    tr.innerHTML = `
+                        <td class="px-6 py-4 font-medium text-slate-800">${patientNameDisplay}</td>
+                        <td class="px-6 py-4 font-medium text-slate-800">${doc.name}</td>
+                        <td class="px-6 py-4">${app.date} at ${app.time}</td>
+                        <td class="px-6 py-4">${dept.name}</td>
+                        <td class="px-6 py-4">${statusBadge}</td>
+                        <td class="px-6 py-4 text-right">${actionBtn}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+
+        window.handleCancel = function (id) {
+            if (confirm('Are you sure you want to cancel this appointment?')) {
+                cancelAppointment(id);
+                renderTable();
+            }
+        }
+
+        // Handle Booking
+        document.getElementById('bookForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const docId = parseInt(document.getElementById('doctorSelect').value);
+            const date = document.getElementById('dateSelect').value;
+            const time = document.getElementById('timeSelect').value;
+            const problem = document.getElementById('problemText').value;
+            const details = {
+                patientName: document.getElementById('patientName').value,
+                age: document.getElementById('patientAge').value,
+                phone: document.getElementById('patientPhone').value,
+                address: document.getElementById('patientAddress').value,
+                medicalBackground: document.getElementById('patientHistory').value
+            };
+
+            const msgEl = document.getElementById('bookingMsg');
+
+            if (!docId || !date || !time) return;
+
+            const result = bookAppointment(user.id, docId, date, time, problem, details);
+
+            msgEl.classList.remove('hidden', 'bg-green-50', 'text-green-700', 'border-green-100', 'bg-red-50', 'text-red-700', 'border-red-100');
+
+            if (result.success) {
+                msgEl.classList.add('bg-green-50', 'text-green-700', 'border', 'border-green-100');
+                msgEl.textContent = result.message;
+                document.getElementById('bookForm').reset();
+                docSelect.disabled = true;
+                renderTable();
+            } else {
+                msgEl.classList.add('bg-red-50', 'text-red-700', 'border', 'border-red-100');
+                msgEl.textContent = result.message;
+            }
+
+            setTimeout(() => {
+                msgEl.classList.add('hidden');
+            }, 5000);
+        });
+
+        // Init
+        renderTable();
+
+        // Handle pre-selections from the landing page
+        const preselectedDept = localStorage.getItem('hams_preselect_dept');
+        if (preselectedDept) {
+            document.getElementById('deptSelect').value = preselectedDept;
+            document.getElementById('deptSelect').dispatchEvent(new Event('change'));
+            localStorage.removeItem('hams_preselect_dept'); // clear it after reading
+        }
+    </script>
+</body>
+
+</html>

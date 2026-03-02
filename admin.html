@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HAMS - Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="db.js"></script>
+</head>
+
+<body class="bg-slate-50 min-h-screen font-sans">
+
+    <!-- Navigation -->
+    <nav class="bg-blue-600 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-2">
+                    <div class="bg-white text-blue-600 w-8 h-8 rounded-full flex items-center justify-center font-bold">
+                        +</div>
+                    <span class="font-bold text-xl tracking-tight">HAMS Admin</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span id="welcomeName" class="text-blue-100 text-sm"></span>
+                    <button onclick="logout()"
+                        class="bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded-lg text-sm transition font-medium border border-blue-500">Logout</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+        <!-- Manage Departments -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                <h2 class="text-lg font-bold text-slate-800">Departments</h2>
+            </div>
+
+            <div class="p-6">
+                <form id="deptForm" class="flex gap-2 mb-6">
+                    <input type="text" id="deptName" placeholder="New Department Name"
+                        class="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                        required>
+                    <button type="submit"
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition">Add</button>
+                </form>
+
+                <ul id="deptList"
+                    class="divide-y divide-slate-100 border border-slate-100 rounded-lg max-h-64 overflow-y-auto">
+                    <!-- Populated via JS -->
+                </ul>
+            </div>
+        </div>
+
+        <!-- Manage Doctors -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                <h2 class="text-lg font-bold text-slate-800">Doctors</h2>
+            </div>
+
+            <div class="p-6">
+                <form id="docForm" class="space-y-4 mb-6 pt-2">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input type="text" id="docName" placeholder="Doctor Full Name"
+                            class="col-span-1 md:col-span-2 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                            required>
+                        <select id="docDept"
+                            class="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                            required>
+                            <option value="">Select Department</option>
+                        </select>
+                        <input type="text" id="docDegree" placeholder="Degree (e.g. MD, MBBS)"
+                            class="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                            required>
+                        <input type="number" id="docExperience" placeholder="Years of Experience"
+                            class="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                            required min="0">
+                        <input type="number" id="docFees" placeholder="Consultation Fees ($)"
+                            class="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                            required min="0">
+                    </div>
+
+                    <div class="pt-2 border-t border-slate-100 mt-2">
+                        <p class="text-sm font-medium text-slate-700 mb-2">Login Credentials</p>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <input type="text" id="docUsername" placeholder="Username"
+                                class="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                required>
+                            <input type="email" id="docEmail" placeholder="Email Address"
+                                class="col-span-1 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none px-3 py-2"
+                                required>
+                            <input type="password" id="docPassword" placeholder="Password" value="password"
+                                class="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                required>
+                        </div>
+                    </div>
+
+                    <button type="submit"
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition mt-4">Add
+                        Doctor</button>
+                </form>
+
+                <ul id="docList"
+                    class="divide-y divide-slate-100 border border-slate-100 rounded-lg max-h-96 overflow-y-auto">
+                    <!-- Populated via JS -->
+                </ul>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // Auth check
+        const user = getCurrentUser();
+        if (!user || user.role !== 'ADMIN') {
+            window.location.href = 'index.html';
+        }
+
+        document.getElementById('welcomeName').textContent = `Admin: ${user.name}`;
+
+        // Load Departments
+        function renderDepartments() {
+            const depts = getDepartments();
+            const list = document.getElementById('deptList');
+            const select = document.getElementById('docDept');
+
+            list.innerHTML = '';
+            select.innerHTML = '<option value="">Select Department</option>';
+
+            depts.forEach(d => {
+                // List item
+                const li = document.createElement('li');
+                li.className = 'px-4 py-3 flex justify-between items-center hover:bg-slate-50';
+                li.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <span class="font-medium text-slate-700">${d.name}</span>
+                        <span class="text-xs bg-slate-100 text-slate-500 px-2 py-1 rounded">ID: ${d.id}</span>
+                    </div>
+                    <button onclick="handleDeleteDept(${d.id})" class="text-red-500 hover:text-red-700 hover:bg-red-50 p-1.5 rounded-lg transition-colors" title="Delete Department">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                `;
+                list.appendChild(li);
+
+                // Select option
+                const opt = document.createElement('option');
+                opt.value = d.id;
+                opt.textContent = d.name;
+                select.appendChild(opt);
+            });
+        }
+
+        // Load Doctors
+        function renderDoctors() {
+            const doctors = getDoctors();
+            const list = document.getElementById('docList');
+            list.innerHTML = '';
+
+            doctors.forEach(d => {
+                const dept = getDepartmentById(d.departmentId);
+                const li = document.createElement('li');
+                li.className = 'px-4 py-4 hover:bg-slate-50 flex flex-col gap-2';
+
+                const degree = d.degree || 'N/A';
+                const exp = d.experience ? d.experience + ' Yrs Exp.' : 'N/A';
+                const fees = d.fees ? '$' + d.fees : 'N/A';
+
+                li.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <div class="font-bold text-slate-800 text-base">${d.name} <span class="text-xs font-normal text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full ml-1">${degree}</span></div>
+                            <div class="text-sm font-medium text-blue-600">${dept.name}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-sm font-semibold text-slate-700">${fees}</div>
+                            <div class="text-xs text-slate-500">${exp}</div>
+                        </div>
+                    </div>
+                    <div class="text-xs text-slate-400 border-t border-slate-100 pt-2 mt-1 flex gap-4">
+                        <span>Username: <span class="font-medium text-slate-600">@${d.username}</span></span>
+                        <span>Email: <span class="font-medium text-slate-600">${d.email || 'N/A'}</span></span>
+                    </div>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        // Add Dept
+        document.getElementById('deptForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('deptName').value;
+            if (!name) return;
+
+            const depts = getDepartments();
+            const newId = depts.length ? Math.max(...depts.map(d => d.id)) + 1 : 1;
+
+            depts.push({ id: newId, name });
+            localStorage.setItem('hams_departments', JSON.stringify(depts));
+
+            document.getElementById('deptForm').reset();
+            renderDepartments();
+        });
+
+        // Delete Dept
+        window.handleDeleteDept = function (id) {
+            // Optional: Check if any doctors belong to this department before deleting
+            const doctors = getDoctors();
+            const hasDoctors = doctors.some(d => d.departmentId === id);
+
+            if (hasDoctors) {
+                alert('Cannot delete this department because there are doctors assigned to it. Please reassign or delete the doctors first.');
+                return;
+            }
+
+            if (confirm('Are you sure you want to delete this department?')) {
+                const result = deleteDepartment(id);
+                if (result.success) {
+                    renderDepartments();
+                } else {
+                    alert(result.message);
+                }
+            }
+        };
+
+        // Add doc
+        document.getElementById('docForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('docName').value;
+            const username = document.getElementById('docUsername').value;
+            const email = document.getElementById('docEmail').value;
+            const password = document.getElementById('docPassword').value;
+            const deptId = parseInt(document.getElementById('docDept').value);
+
+            const degree = document.getElementById('docDegree').value;
+            const experience = parseInt(document.getElementById('docExperience').value);
+            const fees = parseInt(document.getElementById('docFees').value);
+
+            if (!name || !username || !email || !password || !deptId || !degree || isNaN(experience) || isNaN(fees)) return;
+
+            const users = JSON.parse(localStorage.getItem('hams_users'));
+            const newId = users.length ? Math.max(...users.map(u => u.id)) + 1 : 1;
+
+            // Check username exists
+            if (users.some(u => u.username === username)) {
+                alert('Username already exists!');
+                return;
+            }
+
+            users.push({
+                id: newId,
+                name: name,
+                username: username,
+                email: email,
+                password: password,
+                role: 'DOCTOR',
+                departmentId: deptId,
+                degree: degree,
+                experience: experience,
+                fees: fees
+            });
+
+            localStorage.setItem('hams_users', JSON.stringify(users));
+
+            document.getElementById('docForm').reset();
+            renderDoctors();
+        });
+
+        // Init
+        renderDepartments();
+        renderDoctors();
+    </script>
+</body>
+
+</html>
